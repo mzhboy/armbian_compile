@@ -1,0 +1,23 @@
+.
+├── clone_build.sh
+├── proxy_compile.sh
+├── build
+│   ├── arch
+│   ├── cache
+│   ├── config
+│   ├── configs
+│   ├── Documentation
+│   ├── drivers
+│   ├── fs
+│   ├── include
+│   ├── lib
+│   ├── mm
+│   ├── output
+│   ├── packages
+│   ├── patch
+│   ├── sound
+│   ├── tools
+│   └── userpatches
+└── cache
+    ├── toolchains
+    └── utility
