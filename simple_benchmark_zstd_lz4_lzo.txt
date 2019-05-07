@@ -1,0 +1,303 @@
+simple benchmark zstd lz4 lzo, tested on orangepilite2
+lite2 is using a usb ethernet connect to the building server.
+the server have ssd and ethernet.
+
+Armbian_5.82_Orangepilite2_Debian_stretch_dev_5.0.11.img 872MB
+
+root@orangepilite2:/srv# time zstd --format=lz4 -o /temp/test.lz4 /mnt/build/output/images/Armbian_5.82_Orangepilite2_Debian_stretch_dev_5.0.11.img 
+/mnt/build/output/images/Armbian_5.82_Orangepilite2_Debian_stretch_dev_5.0.11.img : 54.16%   (914358272 => 495178592 bytes, /temp/test.lz4) 
+
+real	1m5.350s
+user	1m0.642s
+sys	0m3.067s
+root@orangepilite2:/srv# time zstd --format=lz4 -o test.lz4 /mnt/build/output/images/Armbian_5.82_Orangepilite2_Debian_stretch_dev_5.0.11.img
+/mnt/build/output/images/Armbian_5.82_Orangepilite2_Debian_stretch_dev_5.0.11.img : 54.16%   (914358272 => 495178592 bytes, test.lz4) 
+
+real	1m18.134s
+user	1m3.904s
+sys	0m3.534s
+root@orangepilite2:/srv# time zstd -d -o /dev/null /temp/test.lz4 
+/temp/test.lz4      : 914358272 bytes                                          
+
+real	0m2.021s
+user	0m1.540s
+sys	0m0.401s
+root@orangepilite2:/srv# rsync -a --inplace --progress test.zst /temp/
+sending incremental file list
+test.zst
+        441.45M 100%    6.12MB/s    0:01:08 (xfr#1, to-chk=0/1)
+root@orangepilite2:/srv# time zstd -d -o /dev/null /temp/test.zst 
+/temp/test.zst      : 914358272 bytes                                          
+
+real	0m4.275s
+user	0m3.667s
+sys	0m0.480s
+root@orangepilite2:/srv# time zstd -d test.zst -o /dev/null
+t.zst               : 914358272 bytes                                          
+
+real	1m12.150s
+user	0m9.252s
+sys	0m1.367s
+root@orangepilite2:/srv# time zstd /mnt/build/output/images/Armbian_5.82_Orangepilite2_Debian_stretch_dev_5.0.11.img -o /dev/null
+/mnt/build/output/images/Armbian_5.82_Orangepilite2_Debian_stretch_dev_5.0.11.img : 48.28%   (914358272 => 441449411 bytes, /dev/null) 
+
+real	1m11.078s
+user	1m8.801s
+sys	0m2.728s
+mei@orangepilite2:/mnt$ time lzop -5 -o /mnt/test.lzo /mnt/build/output/images/Armbian_5.82_Orangepilite2_Debian_stretch_dev_5.0.11.img
+
+real	0m33.793s
+user	0m6.251s
+sys	0m4.540s
+mei@orangepilite2:/mnt$ time lzop -dc /mnt/test.lzo | dd bs=1M of=/dev/null
+0+3473 records in
+0+3473 records out
+914358272 bytes (914 MB, 872 MiB) copied, 13.8935 s, 65.8 MB/s
+
+real	0m13.915s
+user	0m3.938s
+sys	0m5.533s
+mei@orangepilite2:/mnt$ ll /mnt/test.lzo 
+-rw-rw-r-- 1 mei mei 513M May  7 02:25 /mnt/test.lzo
+mei@orangepilite2:/mnt$ dd if=/mnt/test.lzo of=/dev/null bs=1M
+512+1 records in
+512+1 records out
+537161821 bytes (537 MB, 512 MiB) copied, 13.033 s, 41.2 MB/s
+##---> /mnt is a nfs filesystem connect with usb ethernet rtl8153.
+#  above test indicates that RTL8153 reaches maximum usb2.0 throughput capacity
+mei@orangepilite2:/mnt$ time lzop -6 -o /mnt/test6.lzo /mnt/build/output/images/Armbian_5.82_Orangepilite2_Debian_stretch_dev_5.0.11.img
+
+real	0m32.267s
+user	0m7.061s
+sys	0m4.522s
+mei@orangepilite2:/mnt$ time lzop -dc /mnt/test6.lzo |dd bs=1M of=/dev/null
+0+3463 records in
+0+3463 records out
+914358272 bytes (914 MB, 872 MiB) copied, 14.0177 s, 65.2 MB/s
+
+real	0m14.031s
+user	0m4.195s
+sys	0m5.111s
+mei@orangepilite2:/mnt$ ll test6.lzo 
+-rw-rw-r-- 1 mei mei 513M May  7 02:25 test6.lzo
+mei@orangepilite2:/mnt$ time lzop -7 -o /mnt/test7.lzo /mnt/build/output/images/Armbian_5.82_Orangepilite2_Debian_stretch_dev_5.0.11.img
+
+real	3m4.892s
+user	2m53.113s
+sys	0m2.790s
+mei@orangepilite2:/mnt$ time lzop -dc /mnt/test7.lzo |dd bs=1M of=/dev/null
+0+3472 records in
+0+3472 records out
+914358272 bytes (914 MB, 872 MiB) copied, 12.6327 s, 72.4 MB/s
+
+real	0m12.646s
+user	0m4.490s
+sys	0m4.971s
+mei@orangepilite2:/mnt$ ll test7.lzo 
+-rw-rw-r-- 1 mei mei 465M May  7 02:25 test7.lzo
+==================================================
+mei@orangepilite2:/mnt$ img=/mnt/build/output/images/Armbian_5.82_Orangepilite2_Debian_stretch_dev_5.0.11.img
+mei@orangepilite2:/mnt$ time dd if=$img bs=1M count=300 | lzop -1 -o /temp/test1.lzo
+300+0 records in
+300+0 records out
+314572800 bytes (315 MB, 300 MiB) copied, 2.41136 s, 130 MB/s
+
+real	0m2.424s
+user	0m1.497s
+sys	0m1.398s
+mei@orangepilite2:/mnt$ rrm /temp/test1.lzo -f
+mei@orangepilite2:/mnt$ time dd if=$img bs=1M count=300 | lzop -1 -o /temp/test1.lzo
+300+0 records in
+300+0 records out
+314572800 bytes (315 MB, 300 MiB) copied, 2.33193 s, 135 MB/s
+
+real	0m2.338s
+user	0m1.413s
+sys	0m1.421s
+mei@orangepilite2:/mnt$ time lzop -dc /temp/test1.lzo |dd bs=1M of=/dev/null
+0+1200 records in
+0+1200 records out
+314572800 bytes (315 MB, 300 MiB) copied, 1.63511 s, 192 MB/s
+
+real	0m1.640s
+user	0m0.857s
+sys	0m0.889s
+mei@orangepilite2:/mnt$ ll /temp/test1.lzo 
+-rw-r--r-- 1 mei mei 137M May  7 06:53 /temp/test1.lzo
+mei@orangepilite2:/mnt$ time dd if=$img bs=1M count=300 | lzop -5 -o /temp/test5.lzo
+300+0 records in
+300+0 records out
+314572800 bytes (315 MB, 300 MiB) copied, 2.53981 s, 124 MB/s
+
+real	0m2.552s
+user	0m1.608s
+sys	0m1.416s
+mei@orangepilite2:/mnt$ time lzop -dc /temp/test5.lzo |dd bs=1M of=/dev/null
+0+1200 records in
+0+1200 records out
+314572800 bytes (315 MB, 300 MiB) copied, 1.63587 s, 192 MB/s
+
+real	0m1.641s
+user	0m0.942s
+sys	0m0.805s
+mei@orangepilite2:/mnt$ ll /temp/test*.lzo 
+-rw-r--r-- 1 mei mei 137M May  7 06:23 /temp/test5.lzo
+mei@orangepilite2:/mnt$ time dd if=$img bs=1M count=300 | lzop -6 -o /temp/test6.lzo
+300+0 records in
+300+0 records out
+314572800 bytes (315 MB, 300 MiB) copied, 3.90644 s, 80.5 MB/s
+
+real	0m3.918s
+user	0m1.772s
+sys	0m1.770s
+mei@orangepilite2:/mnt$ time lzop -dc /temp/test6.lzo | dd bs=1M of=/dev/null
+0+1200 records in
+0+1200 records out
+314572800 bytes (315 MB, 300 MiB) copied, 1.61843 s, 194 MB/s
+
+real	0m1.625s
+user	0m0.941s
+sys	0m0.792s
+mei@orangepilite2:/mnt$ ll /temp/test6.lzo 
+-rw-r--r-- 1 mei mei 137M May  7 06:27 /temp/test6.lzo
+mei@orangepilite2:/mnt$ time dd if=$img bs=1M count=300 | lzop -7 -o /temp/test7.lzo
+300+0 records in
+300+0 records out
+314572800 bytes (315 MB, 300 MiB) copied, 51.7636 s, 6.1 MB/s
+
+real	0m51.808s
+user	0m50.842s
+sys	0m1.500s
+mei@orangepilite2:/mnt$ time lzop -dc /temp/test7.lzo | dd bs=1M of=/dev/null
+0+1200 records in
+0+1200 records out
+314572800 bytes (315 MB, 300 MiB) copied, 1.89402 s, 166 MB/s
+
+real	0m1.900s
+user	0m1.167s
+sys	0m0.839s
+mei@orangepilite2:/mnt$ ll /temp/test
+test5.lzo  test6.lzo  test7.lzo  
+mei@orangepilite2:/mnt$ ll /temp/test7.lzo 
+-rw-r--r-- 1 mei mei 123M May  7 06:30 /temp/test7.lzo
+======================================================================
+mei@orangepilite2:/mnt$ time dd if=$img bs=1M count=300 | zstd -3 -o /temp/test3.zst  
+Read : 287 MB ==> 34% 300+0 records in
+300+0 records out
+314572800 bytes (315 MB, 300 MiB) copied, 14.5862 s, 21.6 MB/s
+/*stdin*\            : 35.88%   (314572800 => 112883308 bytes, /temp/test3.zst) 
+
+real	0m15.555s
+user	0m15.642s
+sys	0m1.830s
+mei@orangepilite2:/mnt$ time zstd -d -o /dev/null /temp/test3.zst 
+/temp/test3.zst     : 314572800 bytes                                          
+
+real	0m1.317s
+user	0m1.191s
+sys	0m0.126s
+mei@orangepilite2:/mnt$ ll /temp/test3.zst 
+-rw-r--r-- 1 mei mei 108M May  7 06:35 /temp/test3.zst
+mei@orangepilite2:/mnt$ time dd if=$img bs=1M count=300 | zstd -5 -o /temp/test5.zst
+Read : 287 MB ==> 34% 300+0 records in
+300+0 records out
+314572800 bytes (315 MB, 300 MiB) copied, 32.1065 s, 9.8 MB/s
+/*stdin*\            : 35.33%   (314572800 => 111144868 bytes, /temp/test5.zst) 
+
+real	0m34.655s
+user	0m34.806s
+sys	0m1.561s
+mei@orangepilite2:/mnt$ time zstd -d -o /dev/null /temp/test5.zst 
+/temp/test5.zst     : 314572800 bytes                                          
+
+real	0m1.402s
+user	0m1.289s
+sys	0m0.112s
+mei@orangepilite2:/mnt$ ll /temp/test5.zst 
+-rw-r--r-- 1 mei mei 106M May  7 06:40 /temp/test5.zst
+mei@orangepilite2:/mnt$ time dd if=$img bs=1M count=300 | zstd -7 -o /temp/test7.zst
+Read : 288 MB ==> 34% 300+0 records in
+300+0 records out
+314572800 bytes (315 MB, 300 MiB) copied, 38.9925 s, 8.1 MB/s
+/*stdin*\            : 35.07%   (314572800 => 110307064 bytes, /temp/test7.zst) 
+
+real	0m41.924s
+user	0m42.101s
+sys	0m1.683s
+mei@orangepilite2:/mnt$ time zstd -d -o /dev/null /temp/test7.zst 
+/temp/test7.zst     : 314572800 bytes                                          
+
+real	0m1.234s
+user	0m1.088s
+sys	0m0.146s
+mei@orangepilite2:/mnt$ ll /temp/test7.zst 
+-rw-r--r-- 1 mei mei 106M May  7 06:45 /temp/test7.zst
+mei@orangepilite2:/mnt$ time dd if=$img bs=1M count=300 | zstd -9 -o /temp/test9.zst
+Read : 288 MB ==> 33% 300+0 records in
+300+0 records out
+314572800 bytes (315 MB, 300 MiB) copied, 41.2324 s, 7.6 MB/s
+/*stdin*\            : 34.88%   (314572800 => 109731870 bytes, /temp/test9.zst) 
+
+real	0m44.186s
+user	0m44.409s
+sys	0m1.638s
+mei@orangepilite2:/mnt$ time zstd -d -o /dev/null /temp/test9.zst
+/temp/test9.zst     : 314572800 bytes                                          
+
+real	0m1.220s
+user	0m1.111s
+sys	0m0.110s
+mei@orangepilite2:/mnt$ ll /temp/test9.zst 
+-rw-r--r-- 1 mei mei 105M May  7 06:50 /temp/test9.zst
+==========================================================
+mei@orangepilite2:/mnt$ time dd if=$img bs=1M count=300 | zstd -1 --format=gzip -o /temp/test1.gz
+Read : 298 MB ==> 40.30%300+0 records in
+300+0 records out
+314572800 bytes (315 MB, 300 MiB) copied, 15.6041 s, 20.2 MB/s
+/*stdin*\            : 40.50%   (314572800 => 127395081 bytes, /temp/test1.gz) 
+
+real	0m15.620s
+user	0m14.720s
+sys	0m1.525s
+mei@orangepilite2:/mnt$ time zstd -d -o /dev/null /temp/test1.gz 
+/temp/test1.gz      : 314572800 bytes                                          
+
+real	0m2.633s
+user	0m2.544s
+sys	0m0.089s
+mei@orangepilite2:/mnt$ ll /temp/test1.gz ;rrm /temp/*
+-rw-r--r-- 1 mei mei 122M May  7 07:04 /temp/test1.gz
+mei@orangepilite2:/mnt$ time dd if=$img bs=1M count=300 | zstd -3 --format=gzip -o /temp/test3.gz
+Read : 299 MB ==> 40.02%300+0 records in
+300+0 records out
+314572800 bytes (315 MB, 300 MiB) copied, 17.9528 s, 17.5 MB/s
+/*stdin*\            : 40.10%   (314572800 => 126131624 bytes, /temp/test3.gz) 
+
+real	0m17.968s
+user	0m17.142s
+sys	0m1.450s
+mei@orangepilite2:/mnt$ time zstd -d -o /dev/null /temp/test3.gz 
+/temp/test3.gz      : 314572800 bytes                                          
+
+real	0m2.599s
+user	0m2.454s
+sys	0m0.145s
+mei@orangepilite2:/mnt$ ll /temp/test3.gz 
+-rw-r--r-- 1 mei mei 121M May  7 07:01 /temp/test3.gz
+mei@orangepilite2:/mnt$ time dd if=$img bs=1M count=300 | zstd -5 --format=gzip -o /temp/test5.gz
+Read : 298 MB ==> 39.33%300+0 records in
+300+0 records out
+314572800 bytes (315 MB, 300 MiB) copied, 23.9741 s, 13.1 MB/s
+/*stdin*\            : 39.48%   (314572800 => 124194343 bytes, /temp/test5.gz) 
+
+real	0m23.994s
+user	0m23.132s
+sys	0m1.465s
+mei@orangepilite2:/mnt$ time zstd -d -o /dev/null /temp/test5.gz 
+/temp/test5.gz      : 314572800 bytes                                          
+
+real	0m2.587s
+user	0m2.509s
+sys	0m0.078s
+mei@orangepilite2:/mnt$ ll /temp/* ;rrm /temp/*
+-rw-r--r-- 1 mei mei 119M May  7 07:08 /temp/test5.gz
